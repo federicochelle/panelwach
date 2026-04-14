@@ -105,7 +105,7 @@ function Projects() {
       setProjects((currentProjects) =>
         currentProjects.filter((project) => project.id !== projectId),
       )
-      setActionSuccess('Proyecto eliminado correctamente.')
+      setActionSuccess(`"${projectToDelete.title}" se eliminó correctamente.`)
     } catch (deleteError) {
       setActionError(
         deleteError instanceof Error
@@ -141,8 +141,8 @@ function Projects() {
       )
       setActionSuccess(
         nextPublished
-          ? 'Proyecto publicado correctamente.'
-          : 'Proyecto despublicado correctamente.',
+          ? `"${currentProject.title}" quedó publicado.`
+          : `"${currentProject.title}" volvió a borrador.`,
       )
     } catch (publishError) {
       setActionError(

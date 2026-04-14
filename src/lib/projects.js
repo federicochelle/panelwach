@@ -27,6 +27,7 @@ function normalizeProjectRecord(project) {
     client: project.client || '',
     title_es: project.title_es || '',
     role_es: project.role_es || '',
+    position: project.position ?? '',
     category: project.category || '',
     image: project.image || '',
     image_cf: project.image_cf || '',
@@ -42,6 +43,20 @@ function normalizeProjectRecord(project) {
     description_en: project.description_en || '',
     role_en: project.role_en || '',
   }
+}
+
+function getNumericPositionValue(value) {
+  if (value === '' || value === null || value === undefined) {
+    return null
+  }
+
+  const parsedValue = Number(value)
+
+  if (!Number.isInteger(parsedValue)) {
+    throw new Error('El campo Orden debe ser un número entero válido.')
+  }
+
+  return parsedValue
 }
 
 export async function readProjects() {
@@ -85,6 +100,7 @@ function buildProjectCreatePayload(projectData) {
     client: projectData.client.trim(),
     title_es: projectData.title_es.trim(),
     role_es: projectData.role_es?.trim() || null,
+    position: getNumericPositionValue(projectData.position),
     category: projectData.category.trim(),
     image: projectData.image?.trim() || null,
     image_cf: projectData.image_cf?.trim() || null,
@@ -123,6 +139,10 @@ function buildProjectUpdatePayload(projectData) {
     published: Boolean(projectData.published),
   }
 
+  if (projectData.position !== '' && projectData.position !== null && projectData.position !== undefined) {
+    payload.position = getNumericPositionValue(projectData.position)
+  }
+
   const optionalFields = [
     'role_es',
     'image',
@@ -156,6 +176,7 @@ function getProjectBaseSelect() {
     client,
     title_es,
     role_es,
+    position,
     category,
     image,
     image_cf,

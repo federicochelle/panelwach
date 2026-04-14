@@ -3,6 +3,7 @@ export const defaultProjectValues = {
   client: '',
   title_es: '',
   role_es: '',
+  position: '',
   category: '',
   image: '',
   image_cf: '',

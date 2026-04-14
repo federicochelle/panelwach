@@ -188,6 +188,14 @@ function ProjectForm({
               onChange={updateField('role_en')}
               placeholder="Versión en inglés del rol"
             />
+            <FieldGroup
+              label="Orden"
+              type="number"
+              min="1"
+              value={formValues.position}
+              onChange={updateField('position')}
+              placeholder="Ej: 1"
+            />
             <label className="project-field">
               <span>Categoría</span>
               <select
