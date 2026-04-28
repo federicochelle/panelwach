@@ -70,17 +70,6 @@ function Dashboard() {
 
   return (
     <div className="page-stack">
-      <section className="page-hero">
-        <div>
-          <span className="section-tag">Resumen</span>
-          <h2>Centro de control de WACH</h2>
-          <p>
-            Vista general conectada a Supabase para seguir el estado real del
-            catálogo de proyectos antes de sumar el módulo de media.
-          </p>
-        </div>
-      </section>
-
       <section className="stats-grid">
         <article className="stat-card">
           <span>Total de proyectos</span>
@@ -107,7 +96,7 @@ function Dashboard() {
         </article>
       </section>
 
-      <section className="content-grid">
+      <section className="content-grid dashboard-activity-grid">
         <article className="panel-card">
           <div className="panel-card__header">
             <div>
@@ -156,41 +145,6 @@ function Dashboard() {
           ) : null}
         </article>
 
-        <article className="panel-card">
-          <div className="panel-card__header">
-            <div>
-              <span className="section-tag">Estado</span>
-              <h3>Lectura actual del catálogo</h3>
-            </div>
-          </div>
-
-          <div className="checkpoint-list">
-            <div className="checkpoint-item is-complete">
-              <strong>Conexión con Supabase</strong>
-              <span>
-                El dashboard ya toma métricas reales de la tabla `projects`.
-              </span>
-            </div>
-            <div className={`checkpoint-item${totalProjects > 0 ? ' is-complete' : ''}`}>
-              <strong>Catálogo disponible</strong>
-              <span>
-                {loading
-                  ? 'Consultando cuántos proyectos reales hay cargados.'
-                  : totalProjects > 0
-                    ? `Hay ${totalProjects} proyecto${totalProjects === 1 ? '' : 's'} disponible${totalProjects === 1 ? '' : 's'} para administrar.`
-                    : 'Todavía no hay proyectos cargados en Supabase.'}
-              </span>
-            </div>
-            <div className={`checkpoint-item${publishedProjects > 0 ? ' is-complete' : ''}`}>
-              <strong>Estado editorial</strong>
-              <span>
-                {loading
-                  ? 'Calculando el reparto entre publicados y borradores.'
-                  : `${publishedProjects} publicado${publishedProjects === 1 ? '' : 's'} y ${draftProjects} borrador${draftProjects === 1 ? '' : 'es'} en el estado actual.`}
-              </span>
-            </div>
-          </div>
-        </article>
       </section>
     </div>
   )

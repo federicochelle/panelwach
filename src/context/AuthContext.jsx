@@ -18,13 +18,36 @@ function AuthProvider({ children }) {
     let isMounted = true
 
     async function loadSession() {
-      const {
-        data: { session: currentSession },
-      } = await supabase.auth.getSession()
+      try {
+        const { data, error } = await supabase.auth.getSession()
 
-      if (isMounted) {
-        setSession(currentSession)
-        setLoading(false)
+        if (error) {
+          if (import.meta.env.DEV) {
+            console.error('No se pudo obtener la sesión inicial.', error)
+          }
+
+          if (isMounted) {
+            setSession(null)
+          }
+
+          return
+        }
+
+        if (isMounted) {
+          setSession(data?.session ?? null)
+        }
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error('Error inesperado al obtener la sesión inicial.', error)
+        }
+
+        if (isMounted) {
+          setSession(null)
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
@@ -34,14 +57,14 @@ function AuthProvider({ children }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (isMounted) {
-        setSession(nextSession)
+        setSession(nextSession ?? null)
         setLoading(false)
       }
     })
 
     return () => {
       isMounted = false
-      subscription.unsubscribe()
+      subscription?.unsubscribe()
     }
   }, [])
 
@@ -51,12 +74,13 @@ function AuthProvider({ children }) {
 
       return {
         session: session ?? bypassSession,
-      user: session?.user ?? (isDevBypassAuthEnabled ? devBypassUser : null),
-      loading,
-      isAuthenticated: Boolean(session) || isDevBypassAuthEnabled,
-      isSupabaseConfigured,
-      isDevBypassAuthEnabled,
-      isUsingBypassAuth: isDevBypassAuthEnabled && !session,
+        user: session?.user ?? (isDevBypassAuthEnabled ? devBypassUser : null),
+        loading,
+        isAuthenticated: Boolean(session) || isDevBypassAuthEnabled,
+        isSupabaseConfigured,
+        isDevBypassAuthEnabled,
+        isUsingBypassAuth: isDevBypassAuthEnabled && !session,
+        setAuthSession: setSession,
       }
     },
     [session, loading],

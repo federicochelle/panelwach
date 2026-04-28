@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import PageHeader from '../components/common/PageHeader'
 import EmptyState from '../components/common/EmptyState'
 import ProjectsTable from '../components/projects/ProjectsTable'
 import {
@@ -14,6 +13,7 @@ function Projects() {
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [sortConfig, setSortConfig] = useState({ field: 'client', direction: 'asc' })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [actionLoadingId, setActionLoadingId] = useState('')
@@ -63,12 +63,12 @@ function Projects() {
   const filteredProjects = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase()
 
-    return projects.filter((project) => {
+    const nextProjects = projects.filter((project) => {
       const matchesSearch =
         normalizedSearch === '' ||
         project.title.toLowerCase().includes(normalizedSearch) ||
         project.client.toLowerCase().includes(normalizedSearch) ||
-        project.slug.toLowerCase().includes(normalizedSearch)
+        String(project.position).toLowerCase().includes(normalizedSearch)
 
       const matchesCategory =
         categoryFilter === '' || project.category === categoryFilter
@@ -78,7 +78,28 @@ function Projects() {
 
       return matchesSearch && matchesCategory && matchesStatus
     })
-  }, [projects, searchTerm, categoryFilter, statusFilter])
+
+    return nextProjects.sort((firstProject, secondProject) => {
+      const direction = sortConfig.direction === 'asc' ? 1 : -1
+
+      if (sortConfig.field === 'position') {
+        const firstPosition =
+          firstProject.position === '' || firstProject.position === null
+            ? Number.POSITIVE_INFINITY
+            : Number(firstProject.position)
+        const secondPosition =
+          secondProject.position === '' || secondProject.position === null
+            ? Number.POSITIVE_INFINITY
+            : Number(secondProject.position)
+
+        return (firstPosition - secondPosition) * direction
+      }
+
+      return firstProject.client.localeCompare(secondProject.client, 'es', {
+        sensitivity: 'base',
+      }) * direction
+    })
+  }, [projects, searchTerm, categoryFilter, statusFilter, sortConfig])
 
   async function handleDeleteProject(projectId) {
     const projectToDelete = projects.find((project) => project.id === projectId)
@@ -142,7 +163,7 @@ function Projects() {
       setActionSuccess(
         nextPublished
           ? `"${currentProject.title}" quedó publicado.`
-          : `"${currentProject.title}" volvió a borrador.`,
+          : `"${currentProject.title}" quedó archivado.`,
       )
     } catch (publishError) {
       setActionError(
@@ -160,6 +181,16 @@ function Projects() {
     setSearchTerm('')
     setCategoryFilter('')
     setStatusFilter('')
+  }
+
+  function handleToggleSort(field) {
+    setSortConfig((currentSort) => ({
+      field,
+      direction:
+        currentSort.field === field && currentSort.direction === 'asc'
+          ? 'desc'
+          : 'asc',
+    }))
   }
 
   async function handleRetry() {
@@ -183,27 +214,15 @@ function Projects() {
 
   return (
     <div className="page-stack">
-      <PageHeader
-        eyebrow="Proyectos"
-        title="Gestión de proyectos"
-        subtitle="Listado conectado a Supabase para revisar el catálogo real de proyectos, sin tocar todavía el flujo CRUD completo."
-        actions={
+      <section className="panel-card">
+        <div className="panel-card__header projects-card-header">
+          <div>
+            <h3 className="projects-card-title">Catálogo de proyectos</h3>
+          </div>
+
           <Link className="button-primary" to="/projects/new">
             Nuevo proyecto
           </Link>
-        }
-      />
-
-      <section className="panel-card">
-        <div className="panel-card__header">
-          <div>
-            <span className="section-tag">Biblioteca</span>
-            <h3>Catálogo de proyectos</h3>
-            <p>
-              Explorá, filtrá y administrá visualmente los proyectos reales
-              guardados en Supabase.
-            </p>
-          </div>
         </div>
 
         <div className="projects-toolbar">
@@ -213,7 +232,7 @@ function Projects() {
               type="search"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar por titulo, cliente o slug"
+              placeholder="Buscar por titulo, cliente u orden"
             />
           </label>
 
@@ -272,14 +291,14 @@ function Projects() {
           <div className="projects-feedback-card">
             <span className="section-tag">Cargando</span>
             <h3>Cargando proyectos</h3>
-            <p>Estamos consultando la tabla `projects` en Supabase.</p>
+            <p>Estamos consultando los proyectos guardados.</p>
           </div>
         ) : null}
 
         {!loading && error ? (
           <EmptyState
             eyebrow="Error de conexión"
-            title="No pudimos leer proyectos desde Supabase"
+            title="No pudimos leer los proyectos"
             description={error}
             action={
               <button
@@ -295,9 +314,9 @@ function Projects() {
 
         {!loading && !error && projects.length === 0 ? (
           <EmptyState
-            eyebrow="Biblioteca vacía"
+            eyebrow="Sin proyectos"
             title="Todavía no hay proyectos cargados"
-            description="La tabla `projects` no devolvió registros. Cuando existan filas reales en Supabase, van a aparecer acá manteniendo esta misma UI."
+            description="Cuando existan proyectos cargados, van a aparecer acá manteniendo esta misma UI."
           />
         ) : null}
 
@@ -310,10 +329,13 @@ function Projects() {
             onClearFilters={handleClearFilters}
             onDeleteProject={handleDeleteProject}
             onTogglePublish={handleTogglePublish}
+            onToggleSort={handleToggleSort}
+            sortConfig={sortConfig}
             actionLoadingId={actionLoadingId}
             actionType={actionType}
           />
         ) : null}
+
       </section>
     </div>
   )

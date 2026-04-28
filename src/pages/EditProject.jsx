@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import EmptyState from '../components/common/EmptyState'
 import ProjectForm from '../components/projects/ProjectForm'
-import { readProjectById, updateProject } from '../lib/projects'
+import {
+  readProjectById,
+  removeProjectImage,
+  updateProject,
+  uploadProjectImage,
+} from '../lib/projects'
 import { validateProject } from '../lib/projectValidation'
 
 function EditProject() {
@@ -51,7 +56,7 @@ function EditProject() {
     }
   }, [id])
 
-  async function handleUpdateProject(values) {
+  async function handleUpdateProject(values, imageFile) {
     const errors = validateProject(values)
 
     setValidationErrors(errors)
@@ -65,14 +70,34 @@ function EditProject() {
 
     setIsSaving(true)
 
+    let uploadedImageUrl = ''
+
     try {
-      const updatedProject = await updateProject(id, values)
+      let projectPayload = values
+
+      if (imageFile) {
+        uploadedImageUrl = await uploadProjectImage(imageFile)
+        projectPayload = {
+          ...values,
+          image_cf: uploadedImageUrl,
+        }
+      }
+
+      const updatedProject = await updateProject(id, projectPayload)
       setProject(updatedProject)
       setSubmitSuccess('Proyecto actualizado correctamente. Redirigiendo al listado...')
       window.setTimeout(() => {
         navigate('/projects', { replace: true })
       }, 900)
     } catch (updateError) {
+      if (uploadedImageUrl) {
+        try {
+          await removeProjectImage(uploadedImageUrl)
+        } catch (cleanupError) {
+          console.warn('No se pudo limpiar la imagen subida.', cleanupError)
+        }
+      }
+
       setSubmitError(
         updateError instanceof Error
           ? updateError.message

@@ -2,10 +2,10 @@
   font-family: Inter, 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #d9e1ec;
+  color: #dedede;
   background:
-    radial-gradient(circle at top, rgba(43, 61, 92, 0.32), transparent 32%),
-    linear-gradient(180deg, #10151d 0%, #0b1117 100%);
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 32%),
+    linear-gradient(180deg, #090909 0%, #050505 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

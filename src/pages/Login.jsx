@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import navbarLogo from '../assets/navbar.webp'
 import useAuth from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 
 function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { isSupabaseConfigured, isDevBypassAuthEnabled } = useAuth()
+  const { isSupabaseConfigured, isDevBypassAuthEnabled, setAuthSession } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [formError, setFormError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const redirectTo = location.state?.from?.pathname || '/dashboard'
@@ -22,84 +23,107 @@ function Login() {
     event.preventDefault()
 
     if (!isSupabaseConfigured || !supabase) {
-      setError(
-        'Supabase todavía no está configurado. Agregá las variables de entorno requeridas para habilitar el inicio de sesión.',
+      setFormError(
+        'La autenticación todavía no está configurada. Agregá las variables de entorno requeridas para habilitar el inicio de sesión.',
       )
       return
     }
 
     setIsSubmitting(true)
-    setError('')
+    setFormError('')
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
 
-    if (signInError) {
-      setError('Email o contraseña inválidos. Probá nuevamente.')
+      if (import.meta.env.DEV) {
+        console.log({ data, error })
+      }
+
+      if (error) {
+        setFormError(
+          import.meta.env.DEV
+            ? error.message
+            : 'Email o contraseña inválidos. Probá nuevamente.',
+        )
+        return
+      }
+
+      if (!data?.session) {
+        setFormError(
+          'La respuesta fue validada, pero no devolvió una sesión activa. Revisá si el usuario necesita confirmar el email o si el acceso con email y contraseña está habilitado.',
+        )
+        return
+      }
+
+      setAuthSession(data.session)
+      navigate(redirectTo, { replace: true })
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.error('Error inesperado durante el inicio de sesión.', error)
+      }
+
+      setFormError(
+        'No se pudo completar el inicio de sesión. Probá nuevamente en unos segundos.',
+      )
+    } finally {
       setIsSubmitting(false)
-      return
     }
-
-    navigate(redirectTo, { replace: true })
   }
 
   return (
     <div className="auth-page">
       <section className="auth-card">
         <div className="auth-card__intro">
-          <span className="auth-card__eyebrow">Acceso administrador</span>
-          <h1>Iniciar sesión en WACH Admin</h1>
-          <p>
-            Ingresá con tus credenciales de administrador para entrar al panel,
-            gestionar proyectos y continuar el desarrollo del flujo de contenido.
-          </p>
+          <img src={navbarLogo} alt="WACH" className="auth-card__logo" />
         </div>
 
         <form className="auth-card__form" onSubmit={handleSubmit}>
-          <label className="field-shell">
-            <span>Email</span>
-            <input
-              className="auth-input"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="admin@wachstudio.com"
-              autoComplete="email"
-              required
-            />
-          </label>
+          <div className="auth-fields-card">
+            <label className="auth-field">
+              <span>Email</span>
+              <input
+                className="auth-input"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="admin@wachstudio.com"
+                autoComplete="email"
+                required
+              />
+            </label>
 
-          <label className="field-shell">
-            <span>Contraseña</span>
-            <input
-              className="auth-input"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Ingresá tu contraseña"
-              autoComplete="current-password"
-              required
-            />
-          </label>
+            <label className="auth-field">
+              <span>Contraseña</span>
+              <input
+                className="auth-input"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Ingresá tu contraseña"
+                autoComplete="current-password"
+                required
+              />
+            </label>
 
-          {error ? <p className="auth-message auth-message--error">{error}</p> : null}
+            <button className="button-primary auth-submit" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Iniciando sesión...' : 'Entrar al panel'}
+            </button>
+          </div>
+
+          {formError ? (
+            <p className="auth-message auth-message--error">{formError}</p>
+          ) : null}
 
           {!isSupabaseConfigured ? (
             <p className="auth-message">
-              Falta configurar Supabase. Definí `VITE_SUPABASE_URL` y
-              `VITE_SUPABASE_ANON_KEY` para habilitar la autenticación.
+              Falta configurar la autenticación para habilitar el inicio de
+              sesión.
             </p>
           ) : null}
 
-          <button className="button-primary auth-submit" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Iniciando sesión...' : 'Entrar al panel'}
-          </button>
-
-          <p className="auth-card__hint">
-            El acceso del panel usa Supabase Auth con credenciales reales de administrador.
-          </p>
         </form>
       </section>
     </div>

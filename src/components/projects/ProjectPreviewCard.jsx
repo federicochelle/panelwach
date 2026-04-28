@@ -1,10 +1,12 @@
 import StatusBadge from '../common/StatusBadge'
+import { getProjectImageUrl } from '../../lib/projects'
 
 function ProjectPreviewCard({ project }) {
+  const projectImageUrl = getProjectImageUrl(project)
   const completionItems = [
     { label: 'Campos base', done: Boolean(project.title_es && project.client) },
     { label: 'Contenido ES', done: Boolean(project.description_es) },
-    { label: 'Imagen principal', done: Boolean(project.image) },
+    { label: 'Imagen principal', done: Boolean(projectImageUrl) },
     { label: 'Vimeo', done: Boolean(project.vimeo) },
   ]
 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import ProjectForm from '../components/projects/ProjectForm'
 import { defaultProjectValues } from '../data/projects'
 import { validateProject } from '../lib/projectValidation'
-import { createProject } from '../lib/projects'
+import { createProject, removeProjectImage, uploadProjectImage } from '../lib/projects'
 
 function NewProject() {
   const navigate = useNavigate()
@@ -12,7 +12,7 @@ function NewProject() {
   const [submitSuccess, setSubmitSuccess] = useState('')
   const [validationErrors, setValidationErrors] = useState({})
 
-  async function handleCreateProject(values) {
+  async function handleCreateProject(values, imageFile) {
     const errors = validateProject(values)
 
     setValidationErrors(errors)
@@ -26,13 +26,33 @@ function NewProject() {
 
     setIsSaving(true)
 
+    let uploadedImageUrl = ''
+
     try {
-      await createProject(values)
+      let projectPayload = values
+
+      if (imageFile) {
+        uploadedImageUrl = await uploadProjectImage(imageFile)
+        projectPayload = {
+          ...values,
+          image_cf: uploadedImageUrl,
+        }
+      }
+
+      await createProject(projectPayload)
       setSubmitSuccess('Proyecto creado correctamente. Redirigiendo al listado...')
       window.setTimeout(() => {
         navigate('/projects', { replace: true })
       }, 900)
     } catch (error) {
+      if (uploadedImageUrl) {
+        try {
+          await removeProjectImage(uploadedImageUrl)
+        } catch (cleanupError) {
+          console.warn('No se pudo limpiar la imagen subida.', cleanupError)
+        }
+      }
+
       setSubmitError(
         error instanceof Error ? error.message : 'No se pudo crear el proyecto.',
       )

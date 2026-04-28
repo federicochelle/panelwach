@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { defaultProjectValues, projectCategories } from '../../data/projects'
-import { uploadProjectImage } from '../../lib/projects'
+import { getProjectImageUrl } from '../../lib/projects'
+import StatusBadge from '../common/StatusBadge'
 import FormSection from './FormSection'
 import FieldGroup from './FieldGroup'
 import ImageUploadPlaceholder from './ImageUploadPlaceholder'
-import ProjectPreviewCard from './ProjectPreviewCard'
 
 function ProjectForm({
   initialValues,
@@ -22,25 +22,31 @@ function ProjectForm({
   })
   const [selectedImageFile, setSelectedImageFile] = useState(null)
   const [selectedImageFileName, setSelectedImageFileName] = useState('')
-  const [uploadError, setUploadError] = useState('')
-  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   const formTitle =
     formValues.title_es || (mode === 'edit' ? 'Proyecto en edición' : 'Nuevo proyecto')
+  const selectedImagePreviewUrl = useMemo(
+    () => (selectedImageFile ? URL.createObjectURL(selectedImageFile) : ''),
+    [selectedImageFile],
+  )
+  const remoteImageUrl = getProjectImageUrl(formValues)
+  const previewImageUrl = selectedImagePreviewUrl || remoteImageUrl
 
-  const formSubtitle =
-    mode === 'edit'
-      ? 'Revisá el contenido del proyecto y actualizá su estado editorial desde el panel.'
-      : 'Definí la estructura editorial y los datos base del proyecto usando directamente el schema real.'
+  useEffect(() => {
+    if (!selectedImagePreviewUrl) {
+      return undefined
+    }
+
+    return () => {
+      URL.revokeObjectURL(selectedImagePreviewUrl)
+    }
+  }, [selectedImagePreviewUrl])
 
   function updateField(field) {
     return (event) => {
-      const value =
-        event.target.type === 'checkbox' ? event.target.checked : event.target.value
-
       setFormValues((currentValues) => ({
         ...currentValues,
-        [field]: value,
+        [field]: event.target.value,
       }))
     }
   }
@@ -50,80 +56,55 @@ function ProjectForm({
 
     setSelectedImageFile(nextFile)
     setSelectedImageFileName(nextFile?.name || '')
-    setUploadError('')
   }
 
-  async function handleSubmit(nextPublishedValue) {
-    if (!onSubmit || isSaving || isUploadingImage) {
+  function handleSubmit(nextPublishedValue) {
+    if (!onSubmit || isSaving) {
       return
     }
 
-    let payload = {
+    const payload = {
       ...formValues,
       published: nextPublishedValue,
     }
 
-    if (selectedImageFile) {
-      setIsUploadingImage(true)
-      setUploadError('')
-
-      try {
-        const uploadedImageUrl = await uploadProjectImage(selectedImageFile)
-
-        payload = {
-          ...payload,
-          image_cf: uploadedImageUrl,
-        }
-      } catch (error) {
-        setUploadError(
-          error instanceof Error ? error.message : 'No se pudo subir la imagen.',
-        )
-        setIsUploadingImage(false)
-        return
-      }
-    }
-
     setFormValues(payload)
-    setIsUploadingImage(false)
-    onSubmit(payload)
+    onSubmit(payload, selectedImageFile)
   }
 
   return (
     <div className="project-editor-layout">
       <div className="project-editor-main">
-        <section className="page-hero">
-          <div className="project-form-header">
-            <div>
-              <span className="section-tag">
-                {mode === 'edit' ? 'Editar proyecto' : 'Nuevo proyecto'}
-              </span>
-              <h2>{formTitle}</h2>
-              <p>{formSubtitle}</p>
-            </div>
-
+        <FormSection
+          eyebrow="Información principal"
+          title={formTitle}
+          titleMeta={
+            <StatusBadge status={formValues.published ? 'published' : 'draft'} />
+          }
+          actions={
             <div className="project-form-actions">
               <button
                 type="button"
                 className="button-secondary"
                 onClick={() => handleSubmit(false)}
-                disabled={isSaving || isUploadingImage || !onSubmit}
+                disabled={isSaving || !onSubmit}
               >
-                {isSaving || isUploadingImage ? 'Guardando...' : 'Guardar borrador'}
+                {isSaving ? 'Guardando...' : 'Guardar borrador'}
               </button>
               <button
                 type="button"
                 className="button-primary"
                 onClick={() => handleSubmit(true)}
-                disabled={isSaving || isUploadingImage || !onSubmit}
+                disabled={isSaving || !onSubmit}
               >
-                {isSaving || isUploadingImage ? 'Guardando...' : 'Publicar'}
+                {isSaving ? 'Guardando...' : 'Publicar'}
               </button>
               <Link className="button-tertiary" to="/projects">
                 Cancelar
               </Link>
             </div>
-          </div>
-
+          }
+        >
           {submitError ? (
             <p className="project-form-notice project-form-notice--error">
               {submitError}
@@ -136,18 +117,6 @@ function ProjectForm({
             </p>
           ) : null}
 
-          {uploadError ? (
-            <p className="project-form-notice project-form-notice--error">
-              {uploadError}
-            </p>
-          ) : null}
-        </section>
-
-        <FormSection
-          eyebrow="Contenido"
-          title="Información principal"
-          description="Campos alineados directamente con la tabla real `projects` en Supabase."
-        >
           <div className="project-form-grid">
             <FieldGroup
               label="Título (ES)"
@@ -195,6 +164,7 @@ function ProjectForm({
               value={formValues.position}
               onChange={updateField('position')}
               placeholder="Ej: 1"
+              error={validationErrors.position}
             />
             <label className="project-field">
               <span>Categoría</span>
@@ -272,73 +242,21 @@ function ProjectForm({
                 as="textarea"
               />
             </div>
-            <label className="project-switch project-form-grid__full">
-              <div>
-                <span>Publicado</span>
-                <p>
-                  Controlá el estado de publicación que se enviará al guardar este
-                  proyecto.
-                </p>
-              </div>
-              <input
-                type="checkbox"
-                checked={formValues.published}
-                onChange={updateField('published')}
-              />
-            </label>
           </div>
-        </FormSection>
 
-        <FormSection
-          eyebrow="Medios"
-          title="Referencia visual"
-          description="La imagen nueva se sube a Supabase Storage y se guarda en `image_cf`. El campo `image` se mantiene solo como fallback heredado."
-        >
           <div className="project-media-grid project-media-grid--single">
             <ImageUploadPlaceholder
               label="Imagen principal"
-              fileName={selectedImageFileName || formValues.image_cf || formValues.image}
+              fileName={selectedImageFileName || remoteImageUrl}
               hint="Si elegís un archivo, se subirá al bucket `projects` y se guardará su URL pública en `image_cf` al guardar el proyecto."
-              uploadedUrl={formValues.image_cf}
+              previewUrl={previewImageUrl}
+              currentUrl={remoteImageUrl}
               onFileChange={handleImageFileChange}
-              isUploading={isUploadingImage}
+              isUploading={isSaving && Boolean(selectedImageFile)}
             />
           </div>
         </FormSection>
       </div>
-
-      <aside className="project-editor-sidebar">
-        <FormSection
-          eyebrow="Estado"
-          title="Resumen de publicación"
-          description="Vista rápida del contenido usando directamente las claves reales del proyecto."
-        >
-          <ProjectPreviewCard project={formValues} />
-        </FormSection>
-
-        <FormSection
-          eyebrow="Flujo"
-          title="Estado actual"
-          description="El formulario usa la tabla real `projects` y deja explícita la convivencia entre `image` e `image_cf`."
-        >
-          <div className="checkpoint-list">
-            <div className="checkpoint-item is-complete">
-              <strong>Schema alineado</strong>
-              <span>El estado interno ya usa las keys reales de la tabla `projects`.</span>
-            </div>
-            <div className="checkpoint-item is-complete">
-              <strong>CRUD real funcionando</strong>
-              <span>Alta y edición escriben directamente sobre el schema actual.</span>
-            </div>
-            <div className="checkpoint-item is-complete">
-              <strong>Flujo de imágenes vigente</strong>
-              <span>
-                `image_cf` recibe las nuevas imágenes del panel y `image` queda como respaldo para compatibilidad.
-              </span>
-            </div>
-          </div>
-        </FormSection>
-      </aside>
     </div>
   )
 }

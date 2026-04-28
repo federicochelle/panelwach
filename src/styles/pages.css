@@ -12,10 +12,10 @@
 .page-hero,
 .panel-card,
 .auth-card {
-  border: 1px solid rgba(124, 145, 173, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 28px;
   background:
-    linear-gradient(180deg, rgba(19, 28, 38, 0.94) 0%, rgba(12, 18, 26, 0.98) 100%);
+    linear-gradient(180deg, rgba(13, 13, 13, 0.94) 0%, rgba(8, 8, 8, 0.98) 100%);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
 }
 
@@ -42,7 +42,7 @@
 .panel-card h3,
 .auth-card h1 {
   margin: 10px 0 10px;
-  color: #f3f7fb;
+  color: #f4f4f4;
   line-height: 1.1;
   letter-spacing: -0.04em;
 }
@@ -56,6 +56,9 @@
   display: grid;
   place-items: center;
   padding: 24px;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.82)),
+    url('../assets/backgroundd.webp') center / cover no-repeat;
 }
 
 .auth-card {
@@ -64,6 +67,20 @@
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.9fr);
   gap: 24px;
+  background:
+    linear-gradient(180deg, rgba(10, 10, 11, 0.96) 0%, rgba(2, 2, 3, 0.98) 100%);
+}
+
+.auth-card__intro {
+  display: grid;
+  place-items: center;
+  min-height: 360px;
+}
+
+.auth-card__logo {
+  display: block;
+  width: min(100%, 420px);
+  height: auto;
 }
 
 .auth-card__intro p,
@@ -72,9 +89,8 @@
 .project-preview-card p,
 .timeline-list span,
 .checkpoint-item span,
-.field-shell div,
-.auth-card__hint {
-  color: #95a5b9;
+.field-shell div {
+  color: #a8a8a8;
 }
 
 .auth-card__form,
@@ -87,28 +103,58 @@
   gap: 14px;
 }
 
+.auth-fields-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(8, 8, 10, 0.84);
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-field span {
+  color: #dddddd;
+  font-family: 'Segoe UI', Inter, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.auth-fields-card .auth-submit {
+  width: 100%;
+  margin-top: 2px;
+}
+
 .field-shell {
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 16px 18px;
   border-radius: 18px;
-  border: 1px solid rgba(124, 145, 173, 0.12);
-  background: rgba(17, 25, 35, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 12, 12, 0.84);
 }
 
 .field-shell div {
-  color: #dfe8f3;
+  color: #e3e3e3;
 }
 
 .auth-input {
   width: 100%;
   min-height: 52px;
   padding: 0 16px;
-  border: 1px solid rgba(124, 145, 173, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 16px;
-  background: rgba(14, 21, 29, 0.9);
-  color: #f1f5fa;
+  background: rgba(10, 10, 10, 0.9);
+  color: #f5f5f5;
   outline: none;
   transition:
     border-color 0.2s ease,
@@ -116,21 +162,21 @@
 }
 
 .auth-input::placeholder {
-  color: #72839a;
+  color: #858585;
 }
 
 .auth-input:focus {
-  border-color: rgba(168, 188, 212, 0.32);
-  box-shadow: 0 0 0 3px rgba(112, 136, 163, 0.12);
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
 }
 
 .auth-message {
   margin: 0;
   padding: 14px 16px;
-  border: 1px solid rgba(124, 145, 173, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  background: rgba(16, 24, 33, 0.76);
-  color: #9eb0c4;
+  background: rgba(12, 12, 12, 0.76);
+  color: #b3b3b3;
 }
 
 .auth-message--error {
@@ -154,30 +200,30 @@
   place-items: center;
   padding: 24px;
   background:
-    radial-gradient(circle at top, rgba(43, 61, 92, 0.32), transparent 32%),
-    linear-gradient(180deg, #10151d 0%, #0b1117 100%);
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 32%),
+    linear-gradient(180deg, #090909 0%, #050505 100%);
 }
 
 .auth-loading-card {
   width: min(100%, 520px);
   padding: 28px;
-  border: 1px solid rgba(124, 145, 173, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 28px;
   background:
-    linear-gradient(180deg, rgba(19, 28, 38, 0.94) 0%, rgba(12, 18, 26, 0.98) 100%);
+    linear-gradient(180deg, rgba(13, 13, 13, 0.94) 0%, rgba(8, 8, 8, 0.98) 100%);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
 }
 
 .auth-loading-card h1 {
   margin: 10px 0;
-  color: #f3f7fb;
+  color: #f4f4f4;
   font-size: clamp(1.8rem, 3vw, 2.4rem);
   line-height: 1.1;
   letter-spacing: -0.04em;
 }
 
 .auth-loading-card p {
-  color: #95a5b9;
+  color: #a8a8a8;
 }
 
 .field-shell--large {
@@ -190,8 +236,8 @@
   justify-content: center;
   padding: 14px 20px;
   border-radius: 16px;
-  background: linear-gradient(180deg, #c8d3df 0%, #93a8c0 100%);
-  color: #0a1117;
+  background: linear-gradient(180deg, #f0f0f0 0%, #bdbdbd 100%);
+  color: #050505;
   font-weight: 700;
 }
 
@@ -207,12 +253,12 @@
 .stat-card {
   padding: 22px;
   border-radius: 24px;
-  border: 1px solid rgba(124, 145, 173, 0.12);
-  background: rgba(15, 22, 31, 0.84);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(11, 11, 11, 0.84);
 }
 
 .stat-card span {
-  color: #8ca0b7;
+  color: #9a9a9a;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.75rem;
@@ -221,7 +267,7 @@
 .stat-card strong {
   display: block;
   margin: 12px 0 10px;
-  color: #f4f8fd;
+  color: #ffffff;
   font-size: 2.1rem;
   letter-spacing: -0.05em;
 }
@@ -232,17 +278,36 @@
   gap: 24px;
 }
 
+.dashboard-activity-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .panel-card {
   padding: 24px;
 }
 
 .panel-card__header {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 18px;
   margin-bottom: 18px;
 }
 
 .panel-card h3 {
-  font-size: 1.3rem;
+  font-size: 1.65rem;
+  line-height: 1.1;
+}
+
+.panel-card__title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.panel-card__actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .timeline-list,
@@ -257,8 +322,8 @@
 .project-preview-card {
   padding: 16px 18px;
   border-radius: 18px;
-  border: 1px solid rgba(124, 145, 173, 0.1);
-  background: rgba(14, 21, 29, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 10, 10, 0.78);
 }
 
 .timeline-list strong,
@@ -266,12 +331,12 @@
 .project-preview-card strong {
   display: block;
   margin-bottom: 6px;
-  color: #f3f7fb;
+  color: #f4f4f4;
 }
 
 .checkpoint-item.is-complete {
-  border-color: rgba(142, 171, 202, 0.2);
-  background: rgba(20, 31, 43, 0.92);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(18, 18, 18, 0.92);
 }
 
 .project-preview-card {
@@ -287,7 +352,7 @@
 }
 
 .project-preview-card__meta a {
-  color: #cfdbea;
+  color: #e0e0e0;
 }
 
 .status-badge {
@@ -297,9 +362,9 @@
   min-width: 86px;
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(124, 145, 173, 0.16);
-  background: rgba(34, 46, 62, 0.7);
-  color: #e3ebf5;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(30, 30, 30, 0.7);
+  color: #eeeeee;
   font-size: 0.82rem;
 }
 
@@ -314,6 +379,14 @@
   .form-shell-grid,
   .auth-card {
     grid-template-columns: 1fr;
+  }
+
+  .auth-card__intro {
+    min-height: 180px;
+  }
+
+  .auth-card__logo {
+    width: min(100%, 320px);
   }
 }
 

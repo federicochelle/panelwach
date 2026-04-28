@@ -2,21 +2,26 @@ function ImageUploadPlaceholder({
   label,
   fileName,
   hint,
-  uploadedUrl = '',
+  previewUrl = '',
+  currentUrl = '',
   onFileChange,
   isUploading = false,
 }) {
   return (
     <div className="image-upload-placeholder">
       <div className="image-upload-placeholder__preview">
-        <span>{label}</span>
+        {previewUrl ? (
+          <img src={previewUrl} alt={label} />
+        ) : (
+          <span>Sin imagen</span>
+        )}
       </div>
 
       <div className="image-upload-placeholder__meta">
         <strong>{fileName || `Todavía no hay ${label.toLowerCase()} seleccionada`}</strong>
         <p>{hint}</p>
 
-        {uploadedUrl ? <p>URL activa en `image_cf`: {uploadedUrl}</p> : null}
+        {currentUrl ? <p>URL activa: {currentUrl}</p> : null}
 
         <input
           type="file"

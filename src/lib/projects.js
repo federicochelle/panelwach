@@ -1,5 +1,22 @@
 import { isSupabaseConfigured, supabase } from './supabase'
 
+function getProjectImageFieldValue(value) {
+  const trimmedValue = String(value ?? '').trim()
+
+  return trimmedValue || null
+}
+
+export function getProjectImageUrl(project) {
+  if (!project) {
+    return null
+  }
+
+  return (
+    getProjectImageFieldValue(project.image_cf) ||
+    getProjectImageFieldValue(project.image)
+  )
+}
+
 function normalizeProjectRow(project) {
   return {
     id: project.id,
@@ -9,6 +26,7 @@ function normalizeProjectRow(project) {
     category: project.category || 'Sin categoria',
     year: project.year || 'Sin ano',
     duration: project.duration || 'Sin duracion',
+    position: project.position ?? '',
     published: Boolean(project.published),
     status: project.published ? 'published' : 'draft',
     createdAt: project.created_at || null,
@@ -52,8 +70,8 @@ function getNumericPositionValue(value) {
 
   const parsedValue = Number(value)
 
-  if (!Number.isInteger(parsedValue)) {
-    throw new Error('El campo Orden debe ser un número entero válido.')
+  if (!Number.isInteger(parsedValue) || parsedValue < 1) {
+    throw new Error('El campo Orden debe ser un número entero mayor o igual a 1.')
   }
 
   return parsedValue
@@ -62,15 +80,16 @@ function getNumericPositionValue(value) {
 export async function readProjects() {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error(
-      'Supabase no esta configurado. Defini VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.',
+      'La conexión no está configurada. Revisá las variables de entorno requeridas.',
     )
   }
 
   const { data, error } = await supabase
     .from('projects')
     .select(
-      'id, slug, client, title_es, category, year, duration, published, created_at',
+      'id, slug, client, title_es, category, year, duration, position, published, created_at',
     )
+    .order('position', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -94,79 +113,54 @@ export async function readProjectsDashboard() {
   }
 }
 
-function buildProjectCreatePayload(projectData) {
-  return {
-    slug: projectData.slug.trim(),
-    client: projectData.client.trim(),
-    title_es: projectData.title_es.trim(),
-    role_es: projectData.role_es?.trim() || null,
-    position: getNumericPositionValue(projectData.position),
-    category: projectData.category.trim(),
-    image: projectData.image?.trim() || null,
-    image_cf: projectData.image_cf?.trim() || null,
-    vimeo: projectData.vimeo?.trim() || null,
-    description_es: projectData.description_es?.trim() || null,
-    year: projectData.year?.trim() || null,
-    duration: projectData.duration?.trim() || null,
-    format: projectData.format?.trim() || null,
-    platforms: projectData.platforms?.trim() || null,
-    published: Boolean(projectData.published),
-    title_en: projectData.title_en?.trim() || null,
-    description_en: projectData.description_en?.trim() || null,
-    role_en: projectData.role_en?.trim() || null,
-  }
+const optionalStringFields = [
+  'role_es',
+  'image',
+  'image_cf',
+  'vimeo',
+  'description_es',
+  'year',
+  'duration',
+  'format',
+  'platforms',
+  'title_en',
+  'description_en',
+  'role_en',
+]
+
+function getRequiredStringValue(value) {
+  return String(value ?? '').trim()
 }
 
-function getOptionalUpdateValue(value) {
-  if (typeof value !== 'string') {
-    return undefined
-  }
+function getOptionalStringValue(value) {
+  const trimmedValue = String(value ?? '').trim()
 
-  const trimmedValue = value.trim()
-
-  return trimmedValue === '' ? undefined : trimmedValue
+  return trimmedValue === '' ? null : trimmedValue
 }
 
-function buildProjectUpdatePayload(projectData) {
-  // Create and update intentionally use different builders:
-  // on update we avoid converting optional empty fields to null because that
-  // would wipe existing database content when the edit form is saved.
+function buildProjectPayload(projectData) {
   const payload = {
-    slug: projectData.slug.trim(),
-    client: projectData.client.trim(),
-    title_es: projectData.title_es.trim(),
-    category: projectData.category.trim(),
+    slug: getRequiredStringValue(projectData.slug),
+    client: getRequiredStringValue(projectData.client),
+    title_es: getRequiredStringValue(projectData.title_es),
+    position: getNumericPositionValue(projectData.position),
+    category: getRequiredStringValue(projectData.category),
     published: Boolean(projectData.published),
   }
 
-  if (projectData.position !== '' && projectData.position !== null && projectData.position !== undefined) {
-    payload.position = getNumericPositionValue(projectData.position)
-  }
-
-  const optionalFields = [
-    'role_es',
-    'image',
-    'image_cf',
-    'vimeo',
-    'description_es',
-    'year',
-    'duration',
-    'format',
-    'platforms',
-    'title_en',
-    'description_en',
-    'role_en',
-  ]
-
-  optionalFields.forEach((field) => {
-    const nextValue = getOptionalUpdateValue(projectData[field])
-
-    if (nextValue !== undefined) {
-      payload[field] = nextValue
-    }
+  optionalStringFields.forEach((field) => {
+    payload[field] = getOptionalStringValue(projectData[field])
   })
 
   return payload
+}
+
+function buildProjectCreatePayload(projectData) {
+  return buildProjectPayload(projectData)
+}
+
+function buildProjectUpdatePayload(projectData) {
+  return buildProjectPayload(projectData)
 }
 
 function getProjectBaseSelect() {
@@ -197,7 +191,7 @@ function getProjectBaseSelect() {
 export async function uploadProjectImage(file) {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error(
-      'Supabase no esta configurado. Defini VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.',
+      'La conexión no está configurada. Revisá las variables de entorno requeridas.',
     )
   }
 
@@ -227,10 +221,52 @@ export async function uploadProjectImage(file) {
   return publicUrl
 }
 
+function getProjectStoragePathFromPublicUrl(publicUrl) {
+  if (!publicUrl || typeof publicUrl !== 'string') {
+    return ''
+  }
+
+  try {
+    const { pathname } = new URL(publicUrl)
+    const bucketPathMarker = '/storage/v1/object/public/projects/'
+    const markerIndex = pathname.indexOf(bucketPathMarker)
+
+    if (markerIndex === -1) {
+      return ''
+    }
+
+    return decodeURIComponent(
+      pathname.slice(markerIndex + bucketPathMarker.length),
+    )
+  } catch {
+    return ''
+  }
+}
+
+export async function removeProjectImage(publicUrl) {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error(
+      'La conexión no está configurada. Revisá las variables de entorno requeridas.',
+    )
+  }
+
+  const filePath = getProjectStoragePathFromPublicUrl(publicUrl)
+
+  if (!filePath) {
+    return
+  }
+
+  const { error } = await supabase.storage.from('projects').remove([filePath])
+
+  if (error) {
+    throw new Error(error.message || 'No se pudo limpiar la imagen subida.')
+  }
+}
+
 export async function createProject(projectData) {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error(
-      'Supabase no esta configurado. Defini VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.',
+      'La conexión no está configurada. Revisá las variables de entorno requeridas.',
     )
   }
 
@@ -252,7 +288,7 @@ export async function createProject(projectData) {
 export async function readProjectById(projectId) {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error(
-      'Supabase no esta configurado. Defini VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.',
+      'La conexión no está configurada. Revisá las variables de entorno requeridas.',
     )
   }
 
@@ -272,7 +308,7 @@ export async function readProjectById(projectId) {
 export async function updateProject(projectId, projectData) {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error(
-      'Supabase no esta configurado. Defini VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.',
+      'La conexión no está configurada. Revisá las variables de entorno requeridas.',
     )
   }
 
@@ -295,7 +331,7 @@ export async function updateProject(projectId, projectData) {
 export async function toggleProjectPublished(projectId, published) {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error(
-      'Supabase no esta configurado. Defini VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.',
+      'La conexión no está configurada. Revisá las variables de entorno requeridas.',
     )
   }
 
@@ -303,7 +339,7 @@ export async function toggleProjectPublished(projectId, published) {
     .from('projects')
     .update({ published })
     .eq('id', projectId)
-    .select('id, slug, client, title_es, category, year, duration, published, created_at')
+    .select('id, slug, client, title_es, category, year, duration, position, published, created_at')
     .single()
 
   if (error) {
@@ -318,7 +354,7 @@ export async function toggleProjectPublished(projectId, published) {
 export async function deleteProject(projectId) {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error(
-      'Supabase no esta configurado. Defini VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY.',
+      'La conexión no está configurada. Revisá las variables de entorno requeridas.',
     )
   }
 
